@@ -9,7 +9,7 @@ const server = Bun.serve({
         const db = DB()
         const result = await db`SELECT * FROM customers LIMIT ${limit} OFFSET ${offset}`
 
-        return new Response(result, { headers: { "Content-Type": "application/json" } })
+        return Response.json(result)
       } catch (error) {
         return new Response("Unexpected Server Error", { status: 500 })
       }
@@ -21,7 +21,7 @@ const server = Bun.serve({
       try {
         const db = DB()
         const result = await db`SELECT * FROM products LIMIT ${limit} OFFSET ${offset}`
-        return Response.json(result, { status: 200 })
+        return Response.json(result)
       } catch (error) {
         return new Response("Unexpected Server Error", { status: 500 })
       }
