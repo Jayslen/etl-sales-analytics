@@ -1,4 +1,7 @@
 import { SQL } from 'bun'
+
+const db = DB()
+
 const server = Bun.serve({
   routes: {
     "/customers": async (req, res) => {
@@ -6,7 +9,6 @@ const server = Bun.serve({
       const { offset, limit } = getParams(req)
 
       try {
-        const db = DB()
         const result = await db`SELECT * FROM customers LIMIT ${limit} OFFSET ${offset}`
 
         return Response.json(result)
@@ -19,7 +21,6 @@ const server = Bun.serve({
       const { offset, limit } = getParams(req)
 
       try {
-        const db = DB()
         const result = await db`SELECT * FROM products LIMIT ${limit} OFFSET ${offset}`
         return Response.json(result)
       } catch (error) {
@@ -44,8 +45,9 @@ function DB() {
 
 function getParams(req: Request) {
   const url = new URL(req.url)
-  const offset = url.searchParams.get("offset") ?? 0
-  const limit = url.searchParams.get("limit") ?? 5
+
+  const offset = Number(url.searchParams.get("offset") ?? 0)
+  const limit = Number(url.searchParams.get("limit") ?? 5)
 
   return { offset, limit }
 }
