@@ -1,3 +1,12 @@
 endpoints = ["customers", "products"]
 csv=["customers.csv", "products.csv"]
 api_url = "http://localhost:3000"
+
+[api]
+customers = "customers"
+products = "products"
+
+[csv]
+customers = "/home/jayslen/Development/etl-sales-analytics/data/customers.csv"
+orders = "/home/jayslen/Development/etl-sales-analytics/data/orders.csv"
+products = "/home/jayslen/Development/etl-sales-analytics/data/products.csv"
