@@ -9,10 +9,20 @@ const server = Bun.serve({
       const { offset, limit } = getParams(req)
 
       try {
-        const result = await db`SELECT * FROM customers LIMIT ${limit} OFFSET ${offset}`
-
+        const result = await db`
+        SELECT
+        c.customer_id, c.first_name, c.last_name, c.email,
+          c.phone, ct.city_name as city, cr.country_name as country
+        FROM customers AS c
+        INNER JOIN cities as ct
+        ON c.city_id = ct.city_id
+        LEFT JOIN countries as cr
+        ON cr.country_id = ct.country_id
+        LIMIT ${limit} OFFSET ${offset};
+`
         return Response.json(result)
       } catch (error) {
+        console.log(error)
         return new Response("Unexpected Server Error", { status: 500 })
       }
     },
@@ -21,7 +31,12 @@ const server = Bun.serve({
       const { offset, limit } = getParams(req)
 
       try {
-        const result = await db`SELECT * FROM products LIMIT ${limit} OFFSET ${offset}`
+        const result = await db`SELECT
+          product_id, product_name, c.category_name as category, price, stock
+        FROM products AS p
+        INNER JOIN categories As c
+        ON p.category_id = c.category_id
+        LIMIT ${limit} OFFSET ${offset}`
         return Response.json(result)
       } catch (error) {
         return new Response("Unexpected Server Error", { status: 500 })
