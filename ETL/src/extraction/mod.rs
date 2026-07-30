@@ -1,16 +1,23 @@
-pub mod api {
-    use crate::conf::endpoints::{Customers, Products};
+#[derive(Debug)]
+pub enum Response {
+    Products(Vec<Products>),
+    Customers(Vec<Customers>),
+    Orders(Vec<Order>),
+    // Customers_csv(Vec<Customers_csv>),
+}
 
-    #[derive(Debug)]
-    pub enum ApiResponse {
-        Products(Vec<Products>),
-        Customers(Vec<Customers>),
-    }
+use crate::conf::{Customers, Order, Products};
+
+pub mod api {
+    use crate::{
+        conf::{Customers, Products},
+        extraction::Response,
+    };
 
     pub async fn extract(
         endpoint: &str,
         api_url: &str,
-    ) -> Result<Vec<ApiResponse>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Response>, Box<dyn std::error::Error>> {
         let mut results = Vec::new();
 
         let limit = 100;
@@ -41,7 +48,7 @@ pub mod api {
                     offset += limit;
                 }
 
-                results.push(ApiResponse::Customers(all_customers));
+                results.push(Response::Customers(all_customers));
             }
 
             "products" => {
@@ -68,7 +75,7 @@ pub mod api {
                     offset += limit;
                 }
 
-                results.push(ApiResponse::Products(all_products));
+                results.push(Response::Products(all_products));
             }
 
             _ => {
@@ -77,5 +84,46 @@ pub mod api {
         }
 
         Ok(results)
+    }
+}
+pub mod csv {
+    use csv;
+
+    use crate::conf::{Customers, Order, Products};
+    use crate::extraction::Response;
+
+    pub fn extract(entity: &str, file_path: &str) -> Result<Response, Box<dyn std::error::Error>> {
+        let mut rdr = csv::Reader::from_path(file_path)?;
+
+        match entity {
+            "customers" => {
+                let mut data = Vec::new();
+                for result in rdr.deserialize() {
+                    let record: Customers = result?;
+                    data.push(record);
+                }
+                Ok(Response::Customers(data))
+            }
+
+            "products" => {
+                let mut data = Vec::new();
+                for result in rdr.deserialize() {
+                    let record: Products = result?;
+                    data.push(record);
+                }
+                Ok(Response::Products(data))
+            }
+
+            "orders" => {
+                let mut data = Vec::new();
+                for result in rdr.deserialize() {
+                    let record: Order = result?;
+                    data.push(record);
+                }
+                Ok(Response::Orders(data))
+            }
+
+            _ => Err(format!("Unknown CSV entity: {}", entity).into()),
+        }
     }
 }

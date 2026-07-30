@@ -75,10 +75,10 @@ pub struct Customers {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Order {
-    #[serde(rename = "OrderID")] // 👈 handle ID edge case
+    #[serde(rename = "OrderID")]
     pub order_id: usize,
 
-    #[serde(rename = "CustomerID")] // 👈 same here
+    #[serde(rename = "CustomerID")]
     pub customer_id: usize,
 
     pub order_date: String,

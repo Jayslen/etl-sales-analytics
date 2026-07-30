@@ -1,5 +1,3 @@
-endpoints = ["customers", "products"]
-csv=["customers.csv", "products.csv"]
 api_url = "http://localhost:3000"
 
 [api]
