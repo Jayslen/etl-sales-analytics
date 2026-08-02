@@ -84,3 +84,12 @@ pub struct Order {
     pub order_date: String,
     pub status: String,
 }
+
+#[derive(Debug)]
+pub struct Order_details {
+    pub order_id: i32,
+    pub product_name: String,
+    pub quantity: i32,
+    pub price: f64,
+    pub customer: String,
+}
