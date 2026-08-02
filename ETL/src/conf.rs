@@ -1,28 +1,30 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub api_url: String,
     pub api: Api,
     pub csv: Csv,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Api {
     pub customers: String,
     pub products: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Csv {
     pub customers: String,
     pub products: String,
     pub orders: String,
 }
 
-pub fn load_config(file_path: &String) -> Result<Config, Box<dyn std::error::Error>> {
-    let content: String = fs::read_to_string(file_path).unwrap();
+pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
+    let content: String =
+        fs::read_to_string("/home/jayslen/Development/etl-sales-analytics/ETL/config.toml")
+            .unwrap();
 
     let config: Config = toml::from_str(&content)?;
 
@@ -37,8 +39,8 @@ pub struct Products {
     #[serde(rename = "ProductName", alias = "product_name")]
     pub product_name: String,
 
-    #[serde(rename = "CategoryID", alias = "category_id")]
-    pub category_id: usize,
+    #[serde(rename = "Category", alias = "category")]
+    pub category: String,
 
     #[serde(rename = "Price", alias = "price")]
     pub price: f64,
