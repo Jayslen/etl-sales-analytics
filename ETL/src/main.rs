@@ -1,31 +1,39 @@
 use crate::conf::load_config;
-use std::env;
 
 mod conf;
 mod extraction;
+mod load;
 
 use extraction::{api, csv};
+use tokio_postgres::NoTls;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Vec<String> = env::args().collect();
-    let path = &args[1];
+    let config = load_config()?;
+    let (client, connection) = tokio_postgres::connect(&config.load.postgres_url, NoTls).await?;
 
-    let config = load_config(path)?;
-    //let d_api = api::extract(&config.endpoints[0], &config.api_url).await?;
+    tokio::spawn(async move {
+        if let Err(err) = connection.await {
+            eprintln!("PostgreSQL connection error: {err}");
+        }
+    });
 
-    let d = csv::extract("orders", &config.csv.orders);
-    println!("Total customers: {:?}", d);
-    // if let Some(res) = d.get(0) {
-    //     if let ApiResponse::Customers(customers) = res {
-    //         println!("Total customers: {}", customers.len());
+    for resource in &config.extract.api.resources {
+        let data = api::extract_resource(
+            &config.extract.api.base_url,
+            resource,
+            config.extract.api.default_limit,
+        )
+        .await?;
+        load::load_response(&client, data).await?;
+        println!("Loaded API resource: {}", resource.entity);
+    }
 
-    //         // access 5th customer
-    //         if let Some(customer) = customers.get(4) {
-    //             println!("{:?}", customer);
-    //         }
-    //     }
-    // }
+    for resource in &config.extract.csv.resources {
+        let data = csv::extract_resource(resource)?;
+        load::load_response(&client, data).await?;
+        println!("Loaded CSV resource: {}", resource.entity);
+    }
 
     Ok(())
 }

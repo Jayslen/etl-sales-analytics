@@ -3,28 +3,48 @@ use std::fs;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    pub api_url: String,
-    pub api: Api,
-    pub csv: Csv,
+    pub extract: ExtractConfig,
+    pub load: LoadConfig,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Api {
-    pub customers: String,
-    pub products: String,
+pub struct ExtractConfig {
+    pub api: ApiConfig,
+    pub csv: CsvConfig,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Csv {
-    pub customers: String,
-    pub products: String,
-    pub orders: String,
+pub struct ApiConfig {
+    pub base_url: String,
+    pub default_limit: usize,
+    pub resources: Vec<ApiResource>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ApiResource {
+    pub entity: String,
+    pub endpoint: String,
+    pub limit: Option<usize>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct CsvConfig {
+    pub resources: Vec<CsvResource>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct LoadConfig {
+    pub postgres_url: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct CsvResource {
+    pub entity: String,
+    pub path: String,
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
-    let content: String =
-        fs::read_to_string("/home/jayslen/Development/etl-sales-analytics/ETL/config.toml")
-            .unwrap();
+    let content = fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/config.toml"))?;
 
     let config: Config = toml::from_str(&content)?;
 
@@ -66,11 +86,11 @@ pub struct Customers {
     #[serde(rename = "Phone", alias = "phone")]
     pub phone: String,
 
-    // API gives city_id, CSV gives city name
-    #[serde(alias = "city_id")]
+    // CSV usually gives City, API can provide city/city_id
+    #[serde(rename = "City", alias = "city", alias = "city_id")]
     pub city: Option<String>,
 
-    #[serde(default)]
+    #[serde(rename = "Country", alias = "country", default)]
     pub country: Option<String>,
 }
 

@@ -1,10 +1,26 @@
-api_url = "http://localhost:3000"
+[extract.api]
+base_url = "http://localhost:3000"
+default_limit = 100
 
-[api]
-customers = "customers"
-products = "products"
+[[extract.api.resources]]
+entity = "customers"
+endpoint = "customers"
 
-[csv]
-customers = "/home/jayslen/Development/etl-sales-analytics/data/customers.csv"
-orders = "/home/jayslen/Development/etl-sales-analytics/data/orders.csv"
-products = "/home/jayslen/Development/etl-sales-analytics/data/products.csv"
+[[extract.api.resources]]
+entity = "products"
+endpoint = "products"
+
+[[extract.csv.resources]]
+entity = "customers"
+path = "/home/jayslen/Development/etl-sales-analytics/data/customers.csv"
+
+[[extract.csv.resources]]
+entity = "orders"
+path = "/home/jayslen/Development/etl-sales-analytics/data/orders.csv"
+
+[[extract.csv.resources]]
+entity = "products"
+path = "/home/jayslen/Development/etl-sales-analytics/data/products.csv"
+
+[load]
+postgres_url = "host=localhost port=5432 user=postgres dbname=sales_analytics"

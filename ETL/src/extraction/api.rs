@@ -1,42 +1,80 @@
 use crate::{
-    conf::{Customers, Products},
-    extraction::Response,
+    conf::{ApiResource, Customers, Products},
+    extraction::{Entity, Response},
 };
 
 use serde::de::DeserializeOwned;
+use std::fmt;
+
+#[derive(Debug)]
+struct ApiError {
+    entity: String,
+}
+
+impl fmt::Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Entity '{}' is not supported for API extraction",
+            self.entity
+        )
+    }
+}
+
+impl std::error::Error for ApiError {}
 
 pub async fn extract(
     endpoint: &str,
     api_url: &str,
 ) -> Result<Response, Box<dyn std::error::Error>> {
-    match endpoint {
-        "customers" => {
-            let data = extract_paginated::<Customers>(endpoint, api_url).await?;
-            Ok(Response::Customers(data))
+    let resource = ApiResource {
+        entity: endpoint.to_string(),
+        endpoint: endpoint.to_string(),
+        limit: Some(100),
+    };
+
+    extract_resource(api_url, &resource, 100).await
+}
+
+pub async fn extract_resource(
+    api_url: &str,
+    resource: &ApiResource,
+    default_limit: usize,
+) -> Result<Response, Box<dyn std::error::Error>> {
+    let entity = resource.entity.parse::<Entity>()?;
+    let limit = resource.limit.unwrap_or(default_limit);
+    let client = reqwest::Client::new();
+
+    match entity {
+        Entity::Customers => Ok(Response::Customers(
+            extract_paginated::<Customers>(&client, api_url, &resource.endpoint, limit).await?,
+        )),
+        Entity::Products => Ok(Response::Products(
+            extract_paginated::<Products>(&client, api_url, &resource.endpoint, limit).await?,
+        )),
+        Entity::Orders => Err(ApiError {
+            entity: resource.entity.clone(),
         }
-        "products" => {
-            let data = extract_paginated::<Products>(endpoint, api_url).await?;
-            Ok(Response::Products(data))
-        }
-        _ => Err(format!("Unknown endpoint: {}", endpoint).into()),
+        .into()),
     }
 }
 
-async fn extract_paginated<T>(
-    endpoint: &str,
+pub async fn extract_paginated<T>(
+    client: &reqwest::Client,
     api_url: &str,
+    endpoint: &str,
+    limit: usize,
 ) -> Result<Vec<T>, Box<dyn std::error::Error>>
 where
     T: DeserializeOwned,
 {
     let mut results = Vec::new();
-    let limit = 100;
     let mut offset = 0;
 
     loop {
         let url = format!("{}/{}?limit={}&offset={}", api_url, endpoint, limit, offset);
 
-        let res = reqwest::get(&url).await?;
+        let res = client.get(&url).send().await?;
 
         if !res.status().is_success() {
             let text = res.text().await?;
